@@ -1,21 +1,85 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { connect } from 'react-redux';
 
-class App extends Component {
+import {
+  BrowserRouter as Router,
+  Route,
+  withRouter
+} from 'react-router-dom'
+
+const Target = () => <h1>Yay you redirected!</h1>;
+const ShouldRedirect = () => <h1>{`Oops you didn't redirect :(`}</h1>;
+  
+class _AuthReduxWrapper extends Component {
+  componentDidMount() {
+    this.props.dispatch({
+      type: 'LOGIN'
+    });
+  }
+  
+  componentWillUpdate(newProps) {
+    console.log('new props in CWU:', newProps);
+    if (!this.props.auth.loggedIn && newProps.auth.loggedIn) {
+      console.log('pushing to redirect');
+      this.props.history.push('/target');
+    }
+  }
+  
+  render() {
+    return <div>{this.props.children}</div>;
+  }
+}
+const AuthReduxWrapper = connect(({ auth }) => ({ auth }))(withRouter(_AuthReduxWrapper));
+
+
+class _AuthStateWrapper extends Component {
+  state = {
+    auth: {
+      loggedIn: false
+    }
+  };
+  
+  componentDidMount() {
+    this.setState({ auth: { loggedIn: true }});
+  }
+  
+  componentWillUpdate(newProps, newState) {
+    console.log('new state in CWU:', newState);
+    if (!this.state.auth.loggedIn && newState.auth.loggedIn) {
+      console.log('pushing to redirect');
+      this.props.history.push('/target');
+    }
+  }
+  
+  render() {
+    return <div>{this.props.children}</div>;
+  }
+}
+const AuthStateWrapper = withRouter(_AuthStateWrapper);
+
+
+export class ReduxApp extends Component {
   render() {
     return (
-      <div className="App">
-        <div className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h2>Welcome to React</h2>
-        </div>
-        <p className="App-intro">
-          To get started, edit <code>src/App.js</code> and save to reload.
-        </p>
-      </div>
+      <Router>
+        <AuthReduxWrapper>
+          <Route path="/should-redirect" component={ShouldRedirect} />
+          <Route path="/target" component={Target} />
+        </AuthReduxWrapper>
+      </Router>
     );
   }
 }
 
-export default App;
+export class App extends Component {
+  render() {
+    return (
+      <Router>
+        <AuthStateWrapper>
+          <Route path="/should-redirect" component={ShouldRedirect} />
+          <Route path="/target" component={Target} />
+        </AuthStateWrapper>
+      </Router>
+    );
+  }
+}
